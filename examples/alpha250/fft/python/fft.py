@@ -68,7 +68,7 @@ class FFT(object):
         return self.client.recv_uint32()
 
     @command(classname='Demodulator')
-    def get_vector(self, n_pts):
+    def get_data(self, n_pts):
         return self.client.recv_vector(dtype='int32')
 
     @command()

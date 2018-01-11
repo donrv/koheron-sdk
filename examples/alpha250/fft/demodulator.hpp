@@ -39,7 +39,7 @@ class Demodulator
     int32_t read_fifo() {return adc_fifo_map.read<Fifo_regs::rdfd>();}
     uint32_t get_fifo_length() {return (adc_fifo_map.read<Fifo_regs::rlr>() & 0x3FFFFF) >> 2;}
 
-    std::vector<int32_t>& get_vector(uint32_t n_pts) {
+    std::vector<int32_t>& get_data(uint32_t n_pts) {
         last_buffer_vect.resize(n_pts);
         std::lock_guard<std::mutex> lock(mutex);
         uint32_t start_idx = fifo_buff_idx - (fifo_buff_idx % 2);
@@ -84,7 +84,7 @@ inline void Demodulator::fifo_acquisition_thread()
         {
             std::lock_guard<std::mutex> lock(mutex);
             const uint32_t n_pts = get_fifo_length();
-            ctx.log<INFO>("fifo_length: %d \n", n_pts);
+            //ctx.log<INFO>("fifo_length: %d \n", n_pts);
             for (size_t i = 0; i < n_pts; i++) {
                 fifo_buffer[fifo_buff_idx] = read_fifo();
                 fifo_buff_idx = (fifo_buff_idx + 1) % fifo_buff_size;
