@@ -11,8 +11,8 @@ set_property BITSTREAM.CONFIG.OVERTEMPPOWERDOWN ENABLE [current_design]
 
 set_property IOSTANDARD DIFF_HSTL_I_18 [get_ports adc_*]
 
-set_property PACKAGE_PIN P19 [get_ports adc_clk_in_clk_n] ;# MRCC
-set_property PACKAGE_PIN N18 [get_ports adc_clk_in_clk_p] ;# MRCC
+#set_property PACKAGE_PIN P19 [get_ports adc_clk_in_clk_n] ;# MRCC
+#set_property PACKAGE_PIN N18 [get_ports adc_clk_in_clk_p] ;# MRCC
 
 # Channel 0
 set_property PACKAGE_PIN U17 [get_ports {adc_0_n[0]}]

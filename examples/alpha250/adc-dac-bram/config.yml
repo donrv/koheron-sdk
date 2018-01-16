@@ -30,7 +30,6 @@ memory:
     offset: '0x40040000'
 
 control_registers:
-  - mmcm
   - precision_dac_ctl
   - precision_dac_data[2]
   - spi_cfg_data
