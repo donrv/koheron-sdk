@@ -280,7 +280,8 @@ class ClockGenerator
         ctx.log<INFO>("Clock generator - VCO: %f MHz, ADC: %f MHz, DAC: %f MHz\n",
                       f_vco * 1E-6, fs_adc * 1E-6, fs_dac * 1E-6);
 
-        // For each change the whole chip must be reprogram and the registers order must be respected
+        // For each change the whole chip must be reprogrammed and the registers order must be respected
+
         write_reg(1 << 17); // Reset
         write_reg((CLKout0_PD << 31) + (CLKout0_DDLY << 18) + (CLKout0_DIV << 5) + 0);
         write_reg((CLKout1_PD << 31) + (CLKout1_DDLY << 18) + (CLKout1_DIV << 5) + 1);
@@ -291,6 +292,7 @@ class ClockGenerator
         write_reg((CLKout1_TYPE << 24) + (CLKout0_TYPE << 20) + (CLKout1_ADLY << 11) + (CLKout0_ADLY << 5) + 6);
         write_reg((CLKout3_TYPE << 24) + (CLKout2_TYPE << 20) + (CLKout3_ADLY << 11) + (CLKout2_ADLY << 5) + 7);
         write_reg((CLKout5_TYPE << 24) + (CLKout4_TYPE << 16) + (CLKout5_ADLY << 11) + (CLKout4_ADLY << 5) + 8);
+        write_reg(0b01010101010101010101010101001001); // R9 required programming
         write_reg((1 << 28) + (OSCout0_Type << 24) + (EN_OSCout0 << 22) +  (OSCout0_MUX << 20)
                   + (PD_OSCin << 19) + (OSCout_DIV << 16) + (1 << 14) + (VCO_MUX << 12)
                   + (EN_FEEDBACK_MUX << 0) + (VCO_DIV << 8) + (FEEDBACK_MUX << 5) + 10);

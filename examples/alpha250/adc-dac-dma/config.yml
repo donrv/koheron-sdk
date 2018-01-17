@@ -15,6 +15,12 @@ cores:
   - boards/alpha250/cores/spi_cfg_v1_0
 
 memory:
+  - name: adc_dac_ctl
+    offset: '0x43C10000'
+    range: 4K
+  - name: adc_dac_sts
+    offset: '0x43C20000'
+    range: 4K
   - name: control
     offset: '0x40000000'
     range: 4K
@@ -50,14 +56,9 @@ memory:
     range: 64K
 
 control_registers:
-  - precision_dac_ctl
-  - precision_dac_data[2]
-  - spi_cfg_data
-  - spi_cfg_cmd
   - channel_select
 
 status_registers:
-  - spi_cfg_sts
   - adc[n_adc]
 
 parameters:

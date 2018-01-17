@@ -15,7 +15,7 @@ class PrecisionDac
   public:
     PrecisionDac(Context& ctx_)
     : ctx(ctx_)
-    , ctl(ctx.mm.get<mem::control>())
+    , adc_dac_ctl(ctx.mm.get<mem::adc_dac_ctl>())
     , eeprom(ctx.get<Eeprom>())
     {}
 
@@ -35,8 +35,8 @@ class PrecisionDac
     void init() {
         eeprom.read<eeprom_map::precision_dac_calib::offset>(cal_coeffs);
 
-        ctl.write<reg::precision_dac_ctl>((regs::RESET << 1));
-        ctl.write<reg::precision_dac_ctl>((regs::WRITE_UPDATE << 1) + enable);
+        adc_dac_ctl.write<8>((regs::RESET << 1));
+        adc_dac_ctl.write<8>((regs::WRITE_UPDATE << 1) + enable);
         set_dac_value(0, 0);
         set_dac_value(1, 0);
         set_dac_value(2, 0);
@@ -70,8 +70,8 @@ class PrecisionDac
 
     void set_dac_value(uint32_t channel, uint32_t code) {
         dac_values[channel & 0b11] = code;
-        ctl.write<reg::precision_dac_data0>((dac_values[1] << 16) + (dac_values[0] & 0xFFFF));
-        ctl.write<reg::precision_dac_data1>((dac_values[3] << 16) + (dac_values[2] & 0xFFFF));
+        adc_dac_ctl.write<12>((dac_values[1] << 16) + (dac_values[0] & 0xFFFF));
+        adc_dac_ctl.write<16>((dac_values[3] << 16) + (dac_values[2] & 0xFFFF));
     }
 
     const auto& get_dac_values() const {
@@ -86,7 +86,7 @@ class PrecisionDac
 
   private:
     Context& ctx;
-    Memory<mem::control>& ctl;
+    Memory<mem::adc_dac_ctl>& adc_dac_ctl;
     Eeprom& eeprom;
 
     std::array<uint32_t, n_dacs> dac_values;

@@ -8,12 +8,12 @@
 class SpiConfig {
   public:
     SpiConfig(Context& ctx)
-    : ctl(ctx.mm.get<mem::control>())
-    , sts(ctx.mm.get<mem::status>())
+    : adc_dac_ctl(ctx.mm.get<mem::adc_dac_ctl>())
+    , adc_dac_sts(ctx.mm.get<mem::adc_dac_sts>())
     {}
 
     // cs_id: Index of the slave on the bus
-    // nbytes: Number of bytes send per packet 
+    // nbytes: Number of bytes send per packet
     template<uint8_t cs_id, uint8_t nbytes>
     void write_reg(uint32_t data) {
         static_assert(nbytes > 0, "Empty packet");
@@ -21,22 +21,22 @@ class SpiConfig {
         static_assert(cs_id <= 2, "Exceeds maximum number of slaves on SPI config bus");
 
         // Locking is required since a second thread could write to
-        // registers just after the poling loop exits from the first thread
+        // registers just after the polling loop exits from the first thread
         std::lock_guard<std::mutex> lock(mtx);
 
         // Wait for previous write to finish
-        while (sts.read<reg::spi_cfg_sts>() == 0);
+        while (adc_dac_sts.read<0>() == 0);
 
         constexpr uint32_t TVALID_IDX = 8;
         constexpr uint32_t cmd = (1 << TVALID_IDX) + ((nbytes - 1) << 2) + cs_id;
-        ctl.write<reg::spi_cfg_data>(data);
-        ctl.write<reg::spi_cfg_cmd>(cmd);
-        ctl.clear_bit<reg::spi_cfg_cmd, TVALID_IDX>();
+        adc_dac_ctl.write<4>(data);
+        adc_dac_ctl.write<0>(cmd);
+        adc_dac_ctl.clear_bit<0, TVALID_IDX>();
     }
 
   private:
-    Memory<mem::control>& ctl;
-    Memory<mem::status>& sts;
+    Memory<mem::adc_dac_ctl>& adc_dac_ctl;
+    Memory<mem::adc_dac_sts>& adc_dac_sts;
     std::mutex mtx;
 };
 

@@ -1,3 +1,7 @@
+#----------------------------------
+# Create ports
+#----------------------------------
+
 # ADC ports
 create_bd_port -dir I -from 6 -to 0 adc_0_p
 create_bd_port -dir I -from 6 -to 0 adc_0_n
@@ -25,6 +29,28 @@ create_bd_port -dir O spi_cfg_cs_clk_gen ;# Clock generator
 create_bd_port -dir O spi_cfg_cs_rf_dac
 create_bd_port -dir O spi_cfg_cs_rf_adc
 
+# Precision ADC SPI (SPI0)
+
+create_bd_port -dir O spi_precision_adc_cs
+create_bd_port -dir O spi_precision_adc_sck
+create_bd_port -dir O spi_precision_adc_sdi
+create_bd_port -dir I spi_precision_adc_sdo
+
+connect_bd_net [get_bd_ports spi_precision_adc_cs] [get_bd_pins ps_0/SPI0_SS_O]
+connect_bd_net [get_bd_ports spi_precision_adc_sck] [get_bd_pins ps_0/SPI0_SCLK_O]
+connect_bd_net [get_bd_ports spi_precision_adc_sdi] [get_bd_pins ps_0/SPI0_MOSI_O]
+connect_bd_net [get_bd_ports spi_precision_adc_sdo] [get_bd_pins ps_0/SPI0_MISO_I]
+
+connect_pins ps_0/SDIO0_CDN [get_constant_pin 0 1]
+connect_pins ps_0/SDIO0_WP [get_constant_pin 0 1]
+
+# Start Precision DAC SPI
+
+create_bd_port -dir O spi_precision_dac_cs
+create_bd_port -dir O spi_precision_dac_sck
+create_bd_port -dir O spi_precision_dac_sdi
+create_bd_port -dir O spi_precision_dac_ldac
+
 #---------------------------------------------------------------------------------------
 # Start adc_dac IP
 #---------------------------------------------------------------------------------------
@@ -46,10 +72,6 @@ for {set i 0} {$i < 2} {incr i} {
 create_bd_pin -dir O pll_locked
 
 # Config SPI
-create_bd_pin -dir I -from 31 -to 0 cfg_data
-create_bd_pin -dir I -from 31 -to 0 cfg_cmd
-create_bd_pin -dir O -from 31 -to 0 cfg_sts
-
 create_bd_pin -dir O spi_cfg_sck
 create_bd_pin -dir O spi_cfg_sdi
 create_bd_pin -dir I spi_cfg_sdo
@@ -65,6 +87,34 @@ create_bd_intf_pin -mode Slave -vlnv xilinx.com:interface:diff_clock_rtl:1.0 clk
 create_bd_pin -dir O adc_clk
 create_bd_pin -dir O clk_gen_out_p
 create_bd_pin -dir O clk_gen_out_n
+
+create_bd_pin -dir O spi_precision_dac_cs
+create_bd_pin -dir O spi_precision_dac_sck
+create_bd_pin -dir O spi_precision_dac_sdi
+create_bd_pin -dir O spi_precision_dac_ldac
+
+# Configuration and status registers
+create_bd_intf_pin -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 S_AXI_CTL
+create_bd_intf_pin -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 S_AXI_STS
+
+create_bd_pin -dir I -type clk aclk
+create_bd_pin -dir I aresetn
+
+cell pavel-demin:user:axi_ctl_register:1.0 ctl {
+  CTL_DATA_WIDTH 160
+} {
+  S_AXI S_AXI_CTL
+  aclk aclk
+  aresetn aresetn
+}
+
+cell pavel-demin:user:axi_sts_register:1.0 sts {
+  STS_DATA_WIDTH 32
+} {
+  S_AXI S_AXI_STS
+  aclk aclk
+  aresetn aresetn
+}
 
 set adc_clk_mhz [expr [get_parameter adc_clk] / 1000000]
 
@@ -172,10 +222,10 @@ cell koheron:user:spi_cfg:1.0 spi_cfg_0 {
   CLK_DIV 3
   N_SLAVES 3
 } {
-  s_axis_tdata cfg_data
-  s_axis_tvalid [get_slice_pin cfg_cmd 8 8]
-  cmd [get_slice_pin cfg_cmd 7 0]
-  s_axis_tready cfg_sts
+  s_axis_tdata [get_slice_pin ctl/ctl_data 63 32]
+  s_axis_tvalid [get_slice_pin ctl/ctl_data 8 8]
+  cmd [get_slice_pin ctl/ctl_data 7 0]
+  s_axis_tready sts/sts_data
   sclk spi_cfg_sck
   sdi spi_cfg_sdi
   aclk pll/clk_out1
@@ -184,6 +234,18 @@ cell koheron:user:spi_cfg:1.0 spi_cfg_0 {
 connect_pins spi_cfg_cs_clk_gen [get_slice_pin spi_cfg_0/cs 0 0]
 connect_pins spi_cfg_cs_rf_dac [get_slice_pin spi_cfg_0/cs 1 1]
 connect_pins spi_cfg_cs_rf_adc [get_slice_pin spi_cfg_0/cs 2 2]
+
+# Precision DAC SPI
+cell koheron:user:precision_dac:1.0 precision_dac_0 {} {
+  clk aclk
+  valid [get_slice_pin ctl/ctl_data 64 64]
+  cmd [get_slice_pin ctl/ctl_data 68 65]
+  data [get_slice_pin ctl/ctl_data 159 96]
+  sync spi_precision_dac_cs
+  sdi spi_precision_dac_sdi
+  sclk spi_precision_dac_sck
+  ldac spi_precision_dac_ldac
+}
 
 current_bd_instance $bd
 
@@ -197,6 +259,8 @@ cell xilinx.com:ip:proc_sys_reset:5.0 rst_adc_clk {} {
 }
 
 connect_cell adc_dac {
+    aclk ps_0/FCLK_CLK0
+    aresetn proc_sys_reset_0/peripheral_aresetn
     clk_in clk_gen_in
     adc_0_p adc_0_p
     adc_0_n adc_0_n
@@ -212,4 +276,31 @@ connect_cell adc_dac {
     spi_cfg_cs_clk_gen spi_cfg_cs_clk_gen
     spi_cfg_cs_rf_dac spi_cfg_cs_rf_dac
     spi_cfg_cs_rf_adc spi_cfg_cs_rf_adc
+    spi_precision_dac_cs spi_precision_dac_cs
+    spi_precision_dac_sck spi_precision_dac_sck
+    spi_precision_dac_sdi spi_precision_dac_sdi
+    spi_precision_dac_ldac spi_precision_dac_ldac
 }
+
+connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_mem_intercon_0/M[add_master_interface]_AXI] [get_bd_intf_pins adc_dac/S_AXI_CTL]
+assign_bd_address [get_bd_addr_segs {adc_dac/ctl/s_axi/reg0 }]
+set_property offset [get_memory_offset adc_dac_ctl] [get_bd_addr_segs {ps_0/Data/SEG_ctl_reg0}]
+set_property range [get_memory_range adc_dac_ctl] [get_bd_addr_segs {ps_0/Data/SEG_ctl_reg0}]
+
+connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_mem_intercon_0/M[add_master_interface]_AXI] [get_bd_intf_pins adc_dac/S_AXI_STS]
+assign_bd_address [get_bd_addr_segs {adc_dac/sts/s_axi/reg0 }]
+set_property offset [get_memory_offset adc_dac_sts] [get_bd_addr_segs {ps_0/Data/SEG_sts_reg0}]
+set_property range [get_memory_range adc_dac_sts] [get_bd_addr_segs {ps_0/Data/SEG_sts_reg0}]
+
+# Add XADC for monitoring of Zynq temperature
+
+create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:diff_analog_io_rtl:1.0 Vp_Vn
+
+cell xilinx.com:ip:xadc_wiz:3.3 xadc_wiz_0 {
+} {
+  Vp_Vn Vp_Vn
+  s_axi_lite axi_mem_intercon_0/M[add_master_interface 0]_AXI
+  s_axi_aclk ps_0/FCLK_CLK0
+  s_axi_aresetn proc_sys_reset_0/peripheral_aresetn
+}
+assign_bd_address [get_bd_addr_segs xadc_wiz_0/s_axi_lite/Reg]

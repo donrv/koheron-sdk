@@ -13,6 +13,12 @@ cores:
   - ./address_counter_v1_0
 
 memory:
+  - name: adc_dac_ctl
+    offset: '0x43C10000'
+    range: 4K
+  - name: adc_dac_sts
+    offset: '0x43C20000'
+    range: 4K
   - name: control
     offset: '0x60000000'
     range: 4K
@@ -30,14 +36,10 @@ memory:
     offset: '0x40040000'
 
 control_registers:
-  - precision_dac_ctl
-  - precision_dac_data[2]
-  - spi_cfg_data
-  - spi_cfg_cmd
   - trig
 
 status_registers:
-  - spi_cfg_sts
+  - adc[2]
 
 parameters:
   fclk0: 200000000 # FPGA clock speed in Hz
