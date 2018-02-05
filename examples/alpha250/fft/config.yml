@@ -83,6 +83,7 @@ drivers:
   - ./fft.hpp
   - ./demodulator.hpp
   - ./a250-x0-power-monitor.hpp
+  - ./a250-x0-eeprom.hpp
 
 web:
   - web/koheron.ts
