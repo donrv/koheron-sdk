@@ -29,6 +29,14 @@ class A250_X0_Eeprom(object):
     def get_serial_number(self):
         return self.client.recv_uint32()
 
+class A250_X0_Trigger(object):
+    def __init__(self, client):
+        self.client = client
+
+    @command()
+    def set_threshold(self, voltage):
+        return self.client.recv_int32()
+
 host = os.getenv('HOST', '192.168.1.17')
 client = connect(host, 'fft', restart=False)
 
@@ -42,3 +50,6 @@ sn = 42
 eeprom.set_serial_number(sn)
 assert eeprom.get_serial_number() == sn
 
+# Trigger
+trigger = A250_X0_Trigger(client)
+trigger.set_threshold(2.0)

@@ -84,6 +84,7 @@ drivers:
   - ./demodulator.hpp
   - ./a250-x0-power-monitor.hpp
   - ./a250-x0-eeprom.hpp
+  - ./a250-x0-trigger.hpp
 
 web:
   - web/koheron.ts
