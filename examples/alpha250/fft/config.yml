@@ -82,6 +82,7 @@ drivers:
   - boards/alpha250/drivers/spi-config.hpp
   - ./fft.hpp
   - ./demodulator.hpp
+  - ./a250-x0-power-monitor.hpp
 
 web:
   - web/koheron.ts
